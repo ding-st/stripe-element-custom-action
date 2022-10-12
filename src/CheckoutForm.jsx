@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   PaymentElement,
   useStripe,
+  LinkAuthenticationElement,
   useElements,
 } from "@stripe/react-stripe-js";
 
@@ -11,49 +12,6 @@ export default function CheckoutForm() {
 
   const [message, setMessage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  var stripePaymentMethodHandler = async function (result) {
-    if (result.error) {
-      // Show error in payment form
-    } else {
-      // Otherwise send paymentIntent.id to your server
-      await fetch("/confirmPayment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          payment_intent_id: result.paymentIntent.id,
-        }),
-      })
-        .then(function (res) {
-          return res.json();
-        })
-        .then(function (paymentResponse) {
-          // Handle server response (see Step 7)
-          handleServerResponse(paymentResponse);
-        });
-    }
-  };
-
-  var handleServerResponse = async function (response) {
-    if (response.error) {
-      setMessage(response.error.message);
-    } else if (response.requires_action) {
-      // Use Stripe.js to handle the required next action
-      var result = stripe
-        .handleNextAction({
-          clientSecret: response.payment_intent_client_secret,
-        })
-        .then(function (result) {
-          if (result.error) {
-            setMessage(result.error.message);
-          } else {
-            setMessage("Payment succeeded!");
-          }
-        });
-    } else {
-      setMessage("Payment succeeded!");
-    }
-  };
 
   useEffect(() => {
     if (!stripe) {
@@ -86,33 +44,60 @@ export default function CheckoutForm() {
     });
   }, [stripe]);
 
-  const handleSubmit = async (event) => {
-    // We don't want to let default form submission happen here,
-    // which would refresh the page.
-    event.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
     if (!stripe || !elements) {
       // Stripe.js has not yet loaded.
       // Make sure to disable form submission until Stripe.js has loaded.
       return;
     }
+
     setIsLoading(true);
-    const result = await stripe.updatePaymentIntent({
+
+    const { error } = await stripe.confirmPayment({
       elements,
-      // params: {
-      //   payment_method_data: {
-      //     billing_details: { ... }
-      //   },
-      //   shipping: { ... }
-      // }
+      confirmParams: {
+        // Make sure to change this to your payment completion page
+        return_url: "http://localhost:3000",
+      },
     });
 
-    await stripePaymentMethodHandler(result);
+    // This point will only be reached if there is an immediate error when
+    // confirming the payment. Otherwise, your customer will be redirected to
+    // your `return_url`. For some payment methods like iDEAL, your customer will
+    // be redirected to an intermediate site first to authorize the payment, then
+    // redirected to the `return_url`.
+    if (error.type === "card_error" || error.type === "validation_error") {
+      setMessage(error.message);
+    } else {
+      setMessage("An unexpected error occurred.");
+    }
+
     setIsLoading(false);
   };
   return (
     <form id="payment-form" onSubmit={handleSubmit}>
-      <PaymentElement id="payment-element" />
+      {/* <LinkAuthenticationElement
+      // Optional prop for prefilling customer information
+      // options={{
+      //   defaultValues: {
+      //     email: "foo@bar.com",
+      //   },
+      // }}
+      /> */}
+      <PaymentElement
+        id="payment-element"
+        options={{
+          defaultValues: {
+            billingDetails: {
+              email: "foo@bar.com",
+              name: "John Doe",
+              phone: "888-888-8888",
+            },
+          },
+        }}
+      />
       <button disabled={isLoading || !stripe || !elements} id="submit">
         <span id="button-text">
           {isLoading ? <div className="spinner" id="spinner"></div> : "Pay now"}

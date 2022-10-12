@@ -9,11 +9,11 @@ import "./App.css";
 // recreating the Stripe object on every render.
 // This is your test publishable API key.
 const stripePromise = loadStripe(
-  "pk_test_51J9po8LPKTIqzBcHOKRZggcYl3c6hckm3aR6QxSTnzZEvF1j7STEn9POobPhSxCpfCNEE1oJTlJfh52xxeR9zhEF00Fii1Y5Gn",
-  {
-    betas: ["server_side_confirmation_beta_1"],
-    apiVersion: "2020-08-27;server_side_confirmation_beta=v1",
-  }
+  "pk_test_51LaHAQA1DZNUzA7rxURoJPiQUmR4sfYIuQP0c72a12rnuwdVFekY2SMJtWJJeWnBSrv8pU9GDseIMCsZONDDdAff00r5xTk7J7"
+  // {
+  //   betas: ["server_side_confirmation_beta_1"],
+  //   apiVersion: "2020-08-27;server_side_confirmation_beta=v1",
+  // }
 );
 
 export default function App() {

@@ -2,9 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 // This is your test secret API key.
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2020-08-27;server_side_confirmation_beta=v1",
-});
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 app.use(express.static("public"));
 app.use(express.json());
@@ -22,12 +20,10 @@ app.post("/create-payment-intent", async (req, res) => {
   // Create a PaymentIntent with the order amount and currency
   const paymentIntent = await stripe.paymentIntents.create({
     amount: calculateOrderAmount(items),
-    currency: "jpy",
-    automatic_payment_methods: {
-      enabled: true,
-    },
+    currency: "usd",
+    payment_method_types: ["link", "card"],
     transfer_data: {
-      destination: "acct_1LXy3lPr2NhElPD0", //御社のConnect Accountに変更してください
+      destination: "acct_1LcNJvPKgy9nOueB",
     },
   });
 
