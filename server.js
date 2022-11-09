@@ -15,20 +15,43 @@ const calculateOrderAmount = (items) => {
 };
 
 app.post("/create-payment-intent", async (req, res) => {
-  const { items } = req.body;
+  // Create a PaymentIntent with the order amount and currency
+  const setupIntent = await stripe.setupIntents.create({
+    payment_method_types: ["card"],
+    customer: "cus_MdRanwMR9V7GOg",
+    usage: "off_session",
+  });
+
+  res.send({
+    clientSecret: setupIntent.client_secret,
+  });
+});
+app.post("/update-customer", async (req, res) => {
+  const { pm } = req.body;
 
   // Create a PaymentIntent with the order amount and currency
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: calculateOrderAmount(items),
-    currency: "usd",
-    payment_method_types: ["link", "card"],
-    transfer_data: {
-      destination: "acct_1LcNJvPKgy9nOueB",
+  const customer = await await stripe.customers.update("cus_MamPMT090rmIdj", {
+    invoice_settings: {
+      default_payment_method: pm,
     },
   });
 
   res.send({
-    clientSecret: paymentIntent.client_secret,
+    clientSecret: customer.id,
+  });
+});
+app.post("/update-setupIntent", async (req, res) => {
+  const { setupIntent } = req.body;
+  console.log(setupIntent);
+  // Create a PaymentIntent with the order amount and currency
+  const customer = await stripe.setupIntents.update(setupIntent, {
+    metadata: {
+      default_payment_method: "true",
+    },
+  });
+
+  res.send({
+    clientSecret: customer.id,
   });
 });
 

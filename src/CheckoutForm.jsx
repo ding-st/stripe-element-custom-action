@@ -6,7 +6,7 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 
-export default function CheckoutForm() {
+export default function CheckoutForm({ clientSecret }) {
   const stripe = useStripe();
   const elements = useElements();
 
@@ -19,23 +19,23 @@ export default function CheckoutForm() {
     }
 
     const clientSecret = new URLSearchParams(window.location.search).get(
-      "payment_intent_client_secret"
+      "setup_intent_client_secret"
     );
 
     if (!clientSecret) {
       return;
     }
 
-    stripe.retrievePaymentIntent(clientSecret).then(({ paymentIntent }) => {
-      switch (paymentIntent.status) {
+    stripe.retrieveSetupIntent(clientSecret).then(({ setupIntent }) => {
+      switch (setupIntent.status) {
         case "succeeded":
-          setMessage("Payment succeeded!");
+          setMessage("setupIntent succeeded!");
           break;
         case "processing":
-          setMessage("Your payment is processing.");
+          setMessage("Your setupIntent is processing.");
           break;
         case "requires_payment_method":
-          setMessage("Your payment was not successful, please try again.");
+          setMessage("Your setupIntent was not successful, please try again.");
           break;
         default:
           setMessage("Something went wrong.");
@@ -55,12 +55,21 @@ export default function CheckoutForm() {
 
     setIsLoading(true);
 
-    const { error } = await stripe.confirmPayment({
+    // await stripe.retrieveSetupIntent(clientSecret).then(({ setupIntent }) => {
+    //   fetch("/update-setupIntent", {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify({ setupIntent: setupIntent.id }),
+    //   }).then((res) => res.json());
+    // });
+
+    const { error } = await stripe.confirmSetup({
       elements,
       confirmParams: {
         // Make sure to change this to your payment completion page
         return_url: "http://localhost:3000",
       },
+      redirect: "if_required",
     });
 
     // This point will only be reached if there is an immediate error when
@@ -68,10 +77,15 @@ export default function CheckoutForm() {
     // your `return_url`. For some payment methods like iDEAL, your customer will
     // be redirected to an intermediate site first to authorize the payment, then
     // redirected to the `return_url`.
-    if (error.type === "card_error" || error.type === "validation_error") {
+    if (error) {
+      // This point will only be reached if there is an immediate error when
+      // confirming the payment. Show error to your customer (for example, payment
+      // details incomplete)
       setMessage(error.message);
     } else {
-      setMessage("An unexpected error occurred.");
+      // Your customer will be redirected to your `return_url`. For some payment
+      // methods like iDEAL, your customer will be redirected to an intermediate
+      // site first to authorize the payment, then redirected to the `return_url`.
     }
 
     setIsLoading(false);

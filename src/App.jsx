@@ -9,7 +9,7 @@ import "./App.css";
 // recreating the Stripe object on every render.
 // This is your test publishable API key.
 const stripePromise = loadStripe(
-  "pk_test_51LaHAQA1DZNUzA7rxURoJPiQUmR4sfYIuQP0c72a12rnuwdVFekY2SMJtWJJeWnBSrv8pU9GDseIMCsZONDDdAff00r5xTk7J7"
+  "pk_live_51Lps9RD0Q7SbqhcNoGMMezT03R9SOoAT44mEkp3nPZXN6JSFjvSXjSSQU5IWRi8EsWMQqgKqUS4r7Ftzl3zwsiiE00jYw9bceC"
   // {
   //   betas: ["server_side_confirmation_beta_1"],
   //   apiVersion: "2020-08-27;server_side_confirmation_beta=v1",
@@ -24,7 +24,6 @@ export default function App() {
     fetch("/create-payment-intent", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: [{ id: "xl-tshirt" }] }),
     })
       .then((res) => res.json())
       .then((data) => setClientSecret(data.clientSecret));
@@ -42,7 +41,7 @@ export default function App() {
     <div className="App">
       {clientSecret && (
         <Elements options={options} stripe={stripePromise}>
-          <CheckoutForm />
+          <CheckoutForm clientSecret={clientSecret} />
         </Elements>
       )}
     </div>
